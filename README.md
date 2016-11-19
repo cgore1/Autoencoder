@@ -1,0 +1,3 @@
+# An unsupervised approach to encoding facial images using autoencoder
+
+Abstract—Autoencoders are artificial neural networks that play a fundamental role in unsupervised learning. They transform inputs into outputs trying to keep the least amount of contortion. Here we present a study wherein we would be constructing an autoencoder using feedforward network. The autoencoder thus generated encodes the given input in unsupervised fashion to give the best reconstruction of the input. We use facial dataset containing 1000 training sample, 10 cross validation images and 100 test images to train and validate our model. The encoded images thus generated can be compared with the original ones and the quality of compression can be measured. 
