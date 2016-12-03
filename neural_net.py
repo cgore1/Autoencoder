@@ -1,9 +1,13 @@
 import numpy as np
+import data_load as dl
+from PIL import Image
+import glob, os
+
 
 numLayers = 3
 # layerNodes = [1024, 512, 1024]
-layerNodes = [4,2,4]
-expected_output = [[10.0, 10.0, 10.0, 10.0]]
+layerNodes = [1024,4,1024]
+expected_output = [[0.1, 0.2, 0.3, 0.4]]
 learning_rate = 0.01
 
 def sigmoid(z):
@@ -56,6 +60,7 @@ def backpropagate(input, y):
     for i in range(2, len(forward_list)):
         # print 'wt - ' + str(weight[-i])
         # print 'fw - ' + str(forward_list[-i+1])
+        # print (i)
         prod = np.dot( prevDelta, weight[-i + 1])
         # print 'prev -'
         # print prevDelta
@@ -63,7 +68,7 @@ def backpropagate(input, y):
         # print weight[-i + 1]
 
         delta = prod * (sigmoid(zlist[-i]) * (1 - sigmoid(zlist[-i])))
-
+        prevDelta = delta
         partialW = np.dot(np.transpose(delta), forward_list[-i -1])
         # print 'partialW - '
         # print partialW
@@ -103,10 +108,62 @@ def backpropagate(input, y):
     # print weight - partialDvsW
     return partialDvsW, partialDvsB, output
 
-input = np.array([[10.0, 10.0, 10.0, 10.0]])
-for i in range(0, 100000):
+# input = np.array([[0.4,0.3,0.2,0.1]])
+new_input = dl.get_img()
+input = [new_input]
+expected_output = input
+
+prev_output=[[]]
+error_val=[[1.0,1.0,1.0,1.0]]
+
+for i in range(0, 10000):
     partialW, partialB,output = backpropagate(input, expected_output)
     weight = np.array(weight) + learning_rate * np.array(partialW)
     bias = np.array(bias) + learning_rate * np.array(partialB)
+    # if prev_output==output:
+    #     break
+    # else:
+    #     prev_output=output
+    # error_val[0][0] = (expected_output[0][0]-output[0][0])/input[0][0]
+    # error_val[0][1] = (expected_output[0][1] - output[0][1])/input[0][0]
+    # error_val[0][2] = (expected_output[0][2] - output[0][2])/input[0][0]
+    # error_val[0][3] = (expected_output[0][3] - output[0][3])/input[0][0]
+
+    # print "error is:",(error_val[0])
+
+    # print (expected_output[0][0])
+    # if(error_val[0][0]<=0.001 and error_val[0][1]<=0.001 and error_val[0][2]<=0.001 and error_val[0][3]<=0.001):
+    #     break
     if i % 100 is 0:
-        print output
+        print output - input
+
+    size = 32, 32
+
+result = Image.fromarray(output*256)
+result.show()
+result.save('out.bmp')
+
+# for infile in glob.glob("*.pgm"):
+#     file, ext = os.path.splitext(infile)
+#     im = Image.open(infile)
+#     im.thumbnail(size, Image.ANTIALIAS)
+#     im.save(file + ".thumbnail", "pgm")
+
+
+
+res = []
+index = 0
+for i in range(0,32):
+    my_row = []
+    for j in range(0,32):
+        my_row.append(output[0][index] * 256)
+        index += 1
+    res.append(my_row)
+
+
+
+#
+# print weight
+
+
+
