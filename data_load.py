@@ -19,6 +19,27 @@ def load_img():
 
 load_img()
 
+
+dir_test = 'TestImages/TestImages/'
+test_images=[]
+def load_test_img():
+    for im in  (os.listdir(dir)):
+        img  = Image.open(dir + im)
+        pixel = img.load()
+        my_new_arr=[]
+        w1 = img.size[0]
+        h1 = img.size[1]
+        for i in range(w1):
+            for j in range(h1):
+                my_new_arr.append((pixel[i, j] / 256.0))
+        test_images.append(my_new_arr)
+
+load_test_img()
+
+
+def get_test_img():
+    return test_images
+
 def get_img():
     return images
 

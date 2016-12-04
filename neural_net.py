@@ -11,7 +11,9 @@ numLayers = 3
 pixels = 1024
 layerNodes = [pixels + 1 , 512 + 1, pixels]
 learning_rate = 0.01
-images_in_batch = 100
+images_in_batch = 50
+file_bias = 'bias.npy'
+file_weights = 'weights.npy'
 
 def sigmoid(z, shouldModifyLast= False):
     z = 1.0/ (1 + np.exp(-z))
@@ -19,13 +21,24 @@ def sigmoid(z, shouldModifyLast= False):
         z[0][-1] = bias_term
     return z
 
+    weight = np.load('weights.npy')
+
+
 bias = []
-for y in layerNodes[1:]:
-    bias.append(np.random.randn(y,1))
+if os.path.exists(file_bias):
+    bias = np.load(file_bias)
+else:
+    for y in layerNodes[1:]:
+        bias.append(np.random.randn(y,1))
 
 weight = []
-for x,y in zip(layerNodes[1:], layerNodes[:-1]):
-    weight.append(np.random.randn(x, y))
+if os.path.exists(file_weights):
+    weight = np.load(file_weights)
+else:
+    for x,y in zip(layerNodes[1:], layerNodes[:-1]):
+        weight.append(np.random.randn(x, y))
+
+np.set_printoptions(threshold=np.inf)
 
 def forward_propogation(input):
     output = input
@@ -38,6 +51,22 @@ def forward_propogation(input):
         forward_list.append(np.array(output))
 
     return forward_list
+
+def forward_pass_tester():
+    for img in dl.get_test_img():
+        my_input = []
+        for r in img:
+            my_input.append(r)
+        input = [my_input]
+        input[0].append(float(bias_term))
+        expected_output = my_input[:len(my_input) - 1]
+        out = forward_propogation(input)
+        err = out[-1][0] - expected_output
+        # print err
+        print  np.dot(err, np.transpose(err)) / len(err)
+    exit()
+
+# forward_pass_tester()
 
 def backpropagate(input, y):
     # forward
@@ -111,7 +140,7 @@ def batch_update():
     for start in range(0, len(dl.get_img()), images_in_batch):
         print '--- Strting batch ' + str(start / images_in_batch + 1), start
         sumerr = 1000
-        error_threshold = 0.000001
+        error_threshold = 0.0001
         prev_sumerr = sumerr + images_in_batch
         while (prev_sumerr - sumerr) / images_in_batch > error_threshold:
             prev_sumerr = sumerr
@@ -142,27 +171,46 @@ def batch_update():
 
         print '--- batch ' + str(start / images_in_batch + 1) + ' done!'
 
-for i in range(0, 10):
-    batch_update()
 
-new_input = []
-for r in dl.get_img()[0]:
-    new_input.append(r)
-input = [new_input]
-input[0].append(float(bias_term))
-expected_output = [new_input[:len(new_input) - 1]]
-prev_output = [[]]
-partialW, partialB, output = backpropagate(input, expected_output)
+def saveWeights():
+    np.save(file_weights, np.array(weight))
+    np.save(file_bias, np.array(bias))
 
-visualize(output)
+def train():
+    for i in range(0, 1):
+        batch_update()
+        saveWeights()
+
+train()
+
+
+
+# new_input = []
+# for r in dl.get_img()[0]:
+#     new_input.append(r)
+# input = [new_input]
+# input[0].append(float(bias_term))
+# expected_output = [new_input[:len(new_input) - 1]]
+# prev_output = [[]]
+# partialW, partialB, output = backpropagate(input, expected_output)
+#
+# visualize(output)
+#
+# with open('weights', 'w') as f:
+#     for w in weight:
+#         f.write(str(w))
+#
+# with open('bias', 'w') as f:
+#     for b in bias:
+#         f.write(str(b))
 
 def visualizeWeights():
     ar = np.zeros(pixels)
-    i = 0
-    for i in range(0 ,10):
-        w = weight[i][0]
+
+    for i in range(0 ,1):
+        w = weight[0][i]
         den = math.sqrt(np.dot(w, np.transpose(w)))
         for j in range(0, pixels):
             ar[j] = w[j] / den
         visualize([np.asarray(ar)])
-visualizeWeights()
+# visualizeWeights()
