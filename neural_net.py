@@ -2,22 +2,26 @@ import numpy as np
 import data_load as dl
 from PIL import Image
 import glob, os
+from scipy.misc import toimage
 
 
+bias_term = 1
 numLayers = 3
 # layerNodes = [1024, 512, 1024]
-layerNodes = [1024,4,1024]
-expected_output = [[0.1, 0.2, 0.3, 0.4]]
-learning_rate = 0.01
+pixels = 1024
+layerNodes = [pixels + 1 , 512 + 1, pixels]
+learning_rate = 0.2
+images_in_batch = 100
 
-def sigmoid(z):
+def sigmoid(z, shouldModifyLast= False):
     z = 1.0/ (1 + np.exp(-z))
+    if shouldModifyLast:
+        z[0][-1] = bias_term
     return z
 
 bias = []
 for y in layerNodes[1:]:
     bias.append(np.random.randn(y,1))
-    # print np.random.randn(y,1)
 
 weight = []
 for x,y in zip(layerNodes[1:], layerNodes[:-1]):
@@ -40,11 +44,16 @@ def backpropagate(input, y):
     output = input
     forward_list = [input]
     zlist = []
+    layer = 0
     for b, w in zip(bias, weight):
         z = np.dot(output, np.transpose(w)) + np.transpose(b)
         zlist.append(z)
-        output = sigmoid(z)
+        if layer is len(layerNodes) - 1:
+            output = sigmoid(z, False)
+        else:
+            output = sigmoid(z, True)
         forward_list.append(np.array(output))
+        layer += 1
 
     # back
     # final layer
@@ -79,91 +88,89 @@ def backpropagate(input, y):
         # d = np.dot(np.transpose(forward_list[-i]), delta)
         # print 'd = ' + str(d)
 
-    # for w in weight:
-    #     print 'w - ' + str(w)
-    # for f in forward_list:
-    #     print 'f - ' + str(f)
-    # for l in deltalist:
-    #     print 'delta - ' + str(l)
-    # for l in partialDvsW:
-    #     print 'partialW - ' + str(l)
-    # for l in partialDvsB:
-    #     print 'partialB - ' + str(l)
-    # print 'w '
-    # print weight
-    # print 'partial W'
-    # print partialDvsW
-    # print 'diff '
-    # print np.array(weight) - np.array(partialDvsW)
-    # print 'diff b'
-    # print np.array(bias)
-    # print partialDvsB
-    # print np.array(partialDvsB)
-
-    # for w,partialW in zip(weight, partialDvsW):
-    #     print w
-    #     print partialW
-    #     print '--'
-
-    # print weight - partialDvsW
     return partialDvsW, partialDvsB, output
 
-# input = np.array([[0.4,0.3,0.2,0.1]])
-new_input = dl.get_img()
+def visualize(output):
+    res = []
+    index = 0
+
+    for i in range(0, 32):
+        my_row = []
+        for j in range(0, 32):
+            my_row.append(int(output[0][index] * 255))
+            index += 1
+        res.append(my_row)
+    res = np.transpose(np.array(res))
+    toimage(res).show()
+
+def batch_update():
+    global weight
+    global bias
+    start = 0
+
+    for start in range(0, len(dl.get_img()), images_in_batch):
+        print '--- Strting batch ' + str(start / images_in_batch + 1), start
+        sumerr = 1000
+        error_threshold = 0.000001
+        prev_sumerr = sumerr + images_in_batch
+        while (prev_sumerr - sumerr) / images_in_batch > error_threshold:
+            prev_sumerr = sumerr
+            sumerr = 0
+
+            for i in range(start, start + images_in_batch):
+                new_input = []
+                for r in dl.get_img()[i]:
+                    new_input.append(r)
+                input = [new_input]
+                input[0].append(float(bias_term))
+                expected_output = [new_input[:len(new_input) - 1]]
+                prev_output=[[]]
+
+                partialW, partialB,output = backpropagate(input, expected_output)
+                wt = np.array(weight) + learning_rate * np.array(partialW)
+                weight = wt
+                bs = np.array(bias) + learning_rate * np.array(partialB)
+                bias=bs
+                error = np.array((output - [input[0][:len(new_input) - 1]])[0])
+                sumerr = sumerr + np.dot(error, np.transpose(error)) / len(error)
+
+                # if i % 100 is 0:
+                #     a = np.array((output - [input[0][:len(new_input) - 1]])[0])
+                #     # print a
+                #     print np.dot(a, np.transpose(a)) / len(a)
+            print sumerr / images_in_batch
+
+        print '--- batch ' + str(start / images_in_batch + 1) + ' done!'
+
+for i in range(0, 10):
+    batch_update()
+
+new_input = []
+for r in dl.get_img()[0]:
+    new_input.append(r)
 input = [new_input]
-expected_output = input
+input[0].append(float(bias_term))
+expected_output = [new_input[:len(new_input) - 1]]
+prev_output = [[]]
+partialW, partialB, output = backpropagate(input, expected_output)
 
-prev_output=[[]]
-error_val=[[1.0,1.0,1.0,1.0]]
-
-for i in range(0, 10000):
-    partialW, partialB,output = backpropagate(input, expected_output)
-    weight = np.array(weight) + learning_rate * np.array(partialW)
-    bias = np.array(bias) + learning_rate * np.array(partialB)
-    # if prev_output==output:
-    #     break
-    # else:
-    #     prev_output=output
-    # error_val[0][0] = (expected_output[0][0]-output[0][0])/input[0][0]
-    # error_val[0][1] = (expected_output[0][1] - output[0][1])/input[0][0]
-    # error_val[0][2] = (expected_output[0][2] - output[0][2])/input[0][0]
-    # error_val[0][3] = (expected_output[0][3] - output[0][3])/input[0][0]
-
-    # print "error is:",(error_val[0])
-
-    # print (expected_output[0][0])
-    # if(error_val[0][0]<=0.001 and error_val[0][1]<=0.001 and error_val[0][2]<=0.001 and error_val[0][3]<=0.001):
-    #     break
-    if i % 100 is 0:
-        print output - input
-
-    size = 32, 32
-
-result = Image.fromarray(output*256)
-result.show()
-result.save('out.bmp')
-
-# for infile in glob.glob("*.pgm"):
-#     file, ext = os.path.splitext(infile)
-#     im = Image.open(infile)
-#     im.thumbnail(size, Image.ANTIALIAS)
-#     im.save(file + ".thumbnail", "pgm")
-
-
-
-res = []
-index = 0
-for i in range(0,32):
-    my_row = []
-    for j in range(0,32):
-        my_row.append(output[0][index] * 256)
-        index += 1
-    res.append(my_row)
+visualize(output)
 
 
 
 #
-# print weight
+# res = np.transpose(np.array(res))
+# # result = Image.fromarray(res)
+# # result.show()
+# # result.save('out.bmp')
+# # print 'res-'
+# # for r in res:
+# #     print r
+# my_file = 'TrainImages/TrainImages/Ashanti_0003.pgm'
+# img = Image.open(my_file)
+# # print np.asarray(img)  - res
+# # img.show()
+# toimage(res).show()
 
 
 
