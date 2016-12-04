@@ -3,14 +3,14 @@ import data_load as dl
 from PIL import Image
 import glob, os
 from scipy.misc import toimage
-
+import math
 
 bias_term = 1
 numLayers = 3
 # layerNodes = [1024, 512, 1024]
 pixels = 1024
 layerNodes = [pixels + 1 , 512 + 1, pixels]
-learning_rate = 0.2
+learning_rate = 0.01
 images_in_batch = 100
 
 def sigmoid(z, shouldModifyLast= False):
@@ -156,21 +156,13 @@ partialW, partialB, output = backpropagate(input, expected_output)
 
 visualize(output)
 
-
-
-#
-# res = np.transpose(np.array(res))
-# # result = Image.fromarray(res)
-# # result.show()
-# # result.save('out.bmp')
-# # print 'res-'
-# # for r in res:
-# #     print r
-# my_file = 'TrainImages/TrainImages/Ashanti_0003.pgm'
-# img = Image.open(my_file)
-# # print np.asarray(img)  - res
-# # img.show()
-# toimage(res).show()
-
-
-
+def visualizeWeights():
+    ar = np.zeros(pixels)
+    i = 0
+    for i in range(0 ,10):
+        w = weight[i][0]
+        den = math.sqrt(np.dot(w, np.transpose(w)))
+        for j in range(0, pixels):
+            ar[j] = w[j] / den
+        visualize([np.asarray(ar)])
+visualizeWeights()
