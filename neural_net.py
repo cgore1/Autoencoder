@@ -10,10 +10,10 @@ numLayers = 3
 # layerNodes = [1024, 512, 1024]
 pixels = 1024
 layerNodes = [pixels + 1 , 512 + 1, pixels]
-learning_rate = 0.01
+learning_rate = 0.001
 images_in_batch = 50
-file_bias = 'bias.npy'
-file_weights = 'weights.npy'
+file_bias = 'single_bias.npy'
+file_weights = 'single_weights.npy'
 
 def sigmoid(z, shouldModifyLast= False):
     z = 1.0/ (1 + np.exp(-z))
@@ -64,7 +64,6 @@ def forward_pass_tester():
         err = out[-1][0] - expected_output
         # print err
         print  np.dot(err, np.transpose(err)) / len(err)
-    exit()
 
 # forward_pass_tester()
 
@@ -171,13 +170,15 @@ def batch_update():
 
         print '--- batch ' + str(start / images_in_batch + 1) + ' done!'
 
-
 def saveWeights():
     np.save(file_weights, np.array(weight))
     np.save(file_bias, np.array(bias))
 
 def train():
-    for i in range(0, 1):
+    for i in range(0, 1000):
+        print '***'
+        print i
+        print '***'
         batch_update()
         saveWeights()
 
