@@ -19,7 +19,6 @@ def load_img():
 
 load_img()
 
-
 dir_test = 'TestImages/TestImages/'
 test_images=[]
 test_names = []
@@ -38,6 +37,25 @@ def load_test_img():
 
 load_test_img()
 
+
+val_images = []
+valdir = 'ValImages/ValImages/'
+def load_val_img():
+    for im in  (os.listdir(valdir)):
+        img  = Image.open(valdir + im)
+        pixel = img.load()
+        my_arr = []
+        w = img.size[0]
+        h = img.size[1]
+        for i in range(w):
+            for j in range(h):
+                my_arr.append((pixel[i, j] / 256.0))
+                val_images.append(my_arr)
+
+def get_val_img():
+    if len(val_images) is 0:
+        load_val_img()
+    return val_images
 
 def get_test_img():
     return test_images

@@ -8,22 +8,20 @@ import math
 
 bias_term = 1
 numLayers = 3
-# layerNodes = [1024, 512, 1024]
+
 pixels = 1024
-layerNodes = [pixels + 1 , 512 + 1, 512+1, pixels]
+layerNodes = [pixels + bias_term , pixels/2 + bias_term, pixels/2 + bias_term, pixels]
 learning_rate = 0.001
-images_in_batch = 50
+images_in_batch = 20
 file_bias = 'bias.npy'
 file_weights = 'weights.npy'
+max_batch_iterations = 1000
 
 def sigmoid(z, shouldModifyLast= False):
     z = 1.0/ (1 + np.exp(-z))
     if shouldModifyLast:
         z[0][-1] = bias_term
     return z
-
-    weight = np.load('weights.npy')
-
 
 bias = []
 if os.path.exists(file_bias):
@@ -39,8 +37,6 @@ else:
     for x,y in zip(layerNodes[1:], layerNodes[:-1]):
         weight.append(np.random.randn(x, y))
 
-# np.set_printoptions(threshold=np.inf)
-
 def visualizeWeights():
     for i in range(0 ,512):
         ar = np.zeros(pixels)
@@ -48,7 +44,6 @@ def visualizeWeights():
         den = math.sqrt(np.dot(w, np.transpose(w)))
         for j in range(0, pixels):
             ar[j] = w[j] / den
-        # visualize([np.asarray(ar)])
 
 
 def forward_propogation(input):
@@ -76,23 +71,24 @@ def visualize(output):
     res = np.transpose(np.array(res))
     toimage(res).show()
 
-def forward_pass_tester():
-    # for i in range(0, len(dl.get_test_img())):
-    #     my_input = []
-    #     img = dl.get_test_img()[i]
-    #     name = dl.get_test_img_name(i)
-    #     for r in img:
-    #         my_input.append(r)
-    #     input = [my_input]
-    #     input[0].append(float(bias_term))
-    #     expected_output = my_input[:len(my_input) - 1]
-    #     out = forward_propogation(input)
-    #     # visualize(out[-1])
-    #     im = out[-1].reshape((32, 32)).T
-    #     imsave('Output/'+ name, im)
-    #     err = out[-1][0] - expected_output
-    #     # print err
-    #     print  np.dot(err, np.transpose(err)) / len(err)
+def tester():
+    for i in range(0, len(dl.get_test_img())):
+        my_input = []
+        img = dl.get_test_img()[i]
+        name = dl.get_test_img_name(i)
+        for r in img:
+            my_input.append(r)
+        input = [my_input]
+        input[0].append(float(bias_term))
+        expected_output = my_input[:len(my_input) - 1]
+        out = forward_propogation(input)
+        # visualize(out[-1])
+        im = out[-1].reshape((32, 32)).T
+        imsave('Output/'+ name, im)
+        err = out[-1][0] - expected_output
+        # print err
+        print  np.dot(err, np.transpose(err)) / len(err)
+
     # Visulize weights
     for i in range(0 ,512):
         ar = np.zeros(pixels)
@@ -103,7 +99,7 @@ def forward_pass_tester():
         n = 'Weights/' + 'HiddenL1-Node' + str(i) + '.bmp'
         print n
         imsave(n, ar.reshape(32, 32))
-forward_pass_tester()
+tester()
 
 def backpropagate(input, y):
     # forward
@@ -180,7 +176,7 @@ def batch_update():
                 #     a = np.array((output - [input[0][:len(new_input) - 1]])[0])
                 #     # print a
                 #     print np.dot(a, np.transpose(a)) / len(a)
-            print sumerr / images_in_batch
+            print math.sqrt(sumerr / images_in_batch)
 
         print '--- batch ' + str(start / images_in_batch + 1) + ' done!'
 
@@ -189,7 +185,7 @@ def saveWeights():
     np.save(file_bias, np.array(bias))
 
 def train():
-    for i in range(0, 1000):
+    for i in range(0, max_batch_iterations):
         print '***'
         print i
         print '***'
@@ -197,27 +193,3 @@ def train():
         saveWeights()
 
 # train()
-
-
-
-# new_input = []
-# for r in dl.get_img()[0]:
-#     new_input.append(r)
-# input = [new_input]
-# input[0].append(float(bias_term))
-# expected_output = [new_input[:len(new_input) - 1]]
-# prev_output = [[]]
-# partialW, partialB, output = backpropagate(input, expected_output)
-#
-# visualize(output)
-#
-# with open('weights', 'w') as f:
-#     for w in weight:
-#         f.write(str(w))
-#
-# with open('bias', 'w') as f:
-#     for b in bias:
-#         f.write(str(b))
-
-
-# visualizeWeights()
